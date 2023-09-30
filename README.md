@@ -12,6 +12,9 @@ Stake(stake.com)用の非公式APIライブラリ
 - メールデータを取得(`get_email_meta()`)
 - 番号データを取得(`get_phone_meta()`)
 - KYCデータを取得(`get_kyc_meta()`)
+- シードペアを取得(`get_seed_pair()`)
+- Crashの履歴を取得(`get_crash_history()`)
+- Diceのベット(`bet_dice(100, "jpy", 50.5, "above")`)
 - リアルタイムなデータを取得(`StakeSocket()`)
 
 ## サンプル

@@ -9,7 +9,7 @@ with open("README.md", "r", encoding="utf-8", errors="ignore") as file:
 setup(
     name="stake.py",
     author="akkey",
-    version="1.0.0",
+    version="1.0.1",
     packages=["stake"],
     license="MIT",
     description="Stake(stake.com)用の非公式APIライブラリ",

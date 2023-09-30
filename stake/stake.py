@@ -24,6 +24,8 @@ SOFTWARE.
 
 import json
 import uuid
+import string
+import secrets
 import asyncio
 import tls_client
 
@@ -253,6 +255,64 @@ class Stake:
                 json={
                     "query": "query UserKycInfo {\n  isDiscontinuedBlocked\n  user {\n    id\n    roles {\n      name\n    }\n    kycStatus\n    dob\n    createdAt\n    isKycBasicRequired\n    isKycExtendedRequired\n    isKycFullRequired\n    isKycUltimateRequired\n    hasEmailVerified\n    phoneNumber\n    hasPhoneNumberVerified\n    email\n    registeredWithVpn\n    isBanned\n    isSuspended\n    isSuspendedSportsbook\n    kycBasic {\n      ...UserKycBasic\n    }\n    kycExtended {\n      ...UserKycExtended\n    }\n    kycFull {\n      ...UserKycFull\n    }\n    kycUltimate {\n      ...UserKycUltimate\n    }\n    veriffStatus\n    jpyAlternateName: cashierAlternateName(currency: jpy) {\n      firstName\n      lastName\n    }\n    nationalId\n    outstandingWagerAmount {\n      currency\n      amount\n      progress\n    }\n    activeDepositBonus {\n      status\n    }\n    activeRollovers {\n      id\n      active\n      user {\n        id\n      }\n      amount\n      lossAmount\n      createdAt\n      note\n      currency\n      expectedAmount\n      expectedAmountMin\n      progress\n      activeBets {\n        id\n        iid\n        game {\n          id\n          slug\n          name\n        }\n        bet {\n          __typename\n        }\n      }\n    }\n  }\n}\n\nfragment UserKycBasic on UserKycBasic {\n  active\n  address\n  birthday\n  city\n  country\n  createdAt\n  firstName\n  id\n  lastName\n  phoneNumber\n  rejectedReason\n  status\n  updatedAt\n  zipCode\n  occupation\n}\n\nfragment UserKycExtended on UserKycExtended {\n  id\n  active\n  createdAt\n  id\n  rejectedReason\n  status\n}\n\nfragment UserKycFull on UserKycFull {\n  active\n  createdAt\n  id\n  rejectedReason\n  status\n}\n\nfragment UserKycUltimate on UserKycUltimate {\n  id\n  active\n  createdAt\n  id\n  rejectedReason\n  status\n}\n",
                     "variables": {}
+                },
+                cookies=self.cookies
+            ).json()
+        except:
+            raise StakeError("通信内容を解析できませんでした(CFによるブロックの可能性)")
+
+        return response
+    
+    def get_seed_pair(self):
+        try:
+            response = self.session.post(
+                "https://stake.com/_api/graphql",
+                headers=self.headers,
+                json={
+                    "operationName": "UserSeedPair",
+                    "query": "query UserSeedPair {\n  user {\n    id\n    activeClientSeed {\n      id\n      seed\n      __typename\n    }\n    activeServerSeed {\n      id\n      nonce\n      seedHash\n      nextSeedHash\n      __typename\n    }\n    activeCasinoBets {\n      id\n      amount\n      currency\n      game\n      createdAt\n      __typename\n    }\n    __typename\n  }\n}\n"
+                },
+                cookies=self.cookies
+            ).json()
+        except:
+            raise StakeError("通信内容を解析できませんでした(CFによるブロックの可能性)")
+
+        return response
+    
+    def get_crash_history(self):
+        try:
+            response = self.session.post(
+                "https://stake.com/_api/graphql",
+                headers=self.headers,
+                json={
+                    "operationName": "CrashGameListHistory",
+                    "query": "query CrashGameListHistory($limit: Int, $offset: Int) {\n  crashGameList(limit: $limit, offset: $offset) {\n    id\n    startTime\n    crashpoint\n    hash {\n      id\n      hash\n      __typename\n    }\n    __typename\n  }\n}\n",
+                    "variables": {}
+                },
+                cookies=self.cookies
+            ).json()
+        except:
+            raise StakeError("通信内容を解析できませんでした(CFによるブロックの可能性)")
+
+        return response
+    
+    def bet_dice(self, bet_size: float, bet_currency: str, roll_over: float, condition: str):
+        identifier_chars = string.ascii_letters + string.digits + "-_"
+        identifier = "".join([secrets.choice(identifier_chars) for i in range(21)])
+
+        try:
+            response = self.session.post(
+                "https://stake.com/_api/graphql",
+                headers=self.headers,
+                json={
+                    "query": "mutation DiceRoll($amount: Float!, $target: Float!, $condition: CasinoGameDiceConditionEnum!, $currency: CurrencyEnum!, $identifier: String!) {\n  diceRoll(\n    amount: $amount\n    target: $target\n    condition: $condition\n    currency: $currency\n    identifier: $identifier\n  ) {\n    ...CasinoBet\n    state {\n      ...CasinoGameDice\n    }\n  }\n}\n\nfragment CasinoBet on CasinoBet {\n  id\n  active\n  payoutMultiplier\n  amountMultiplier\n  amount\n  payout\n  updatedAt\n  currency\n  game\n  user {\n    id\n    name\n  }\n}\n\nfragment CasinoGameDice on CasinoGameDice {\n  result\n  target\n  condition\n}\n",
+                    "variables": {
+                        "amount": bet_size,
+                        "condition": condition,
+                        "currency": bet_currency,
+                        "identifier": identifier,
+                        "target": roll_over
+                    }
                 },
                 cookies=self.cookies
             ).json()
